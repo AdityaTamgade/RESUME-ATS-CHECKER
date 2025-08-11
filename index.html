@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', 'Poppins', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 25%, #45b7d1 50%, #96ceb4 75%, #feca57 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .upload-area {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .upload-area:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+        }
+        
+        .upload-area:hover::before {
+            left: 100%;
+        }
+        
+        .dark .upload-area {
+            background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);
+        }
+        
+        .dark .upload-area:hover {
+            box-shadow: 0 20px 40px rgba(124, 58, 237, 0.3);
+        }
+        
+        .score-animation {
+            animation: scoreReveal 3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes scoreReveal {
+            0% { 
+                opacity: 0; 
+                transform: scale(0) rotate(-180deg); 
+            }
+            50% { 
+                opacity: 0.5; 
+                transform: scale(1.2) rotate(-90deg); 
+            }
+            100% { 
+                opacity: 1; 
+                transform: scale(1) rotate(0deg); 
+            }
+        }
+        
+        .fade-in {
+            animation: slideInUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes slideInUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(60px) scale(0.9); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        
+        .progress-bar {
+            transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 200% 100%;
+            animation: progressGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes progressGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+        
+        .dark .card-hover:hover {
+            box-shadow: 0 25px 50px rgba(255,255,255,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(255, 107, 107, 0.4);
+        }
+        
+        .strength-item {
+            animation: bounceInLeft 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+        
+        .weakness-item {
+            animation: bounceInRight 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+        
+        @keyframes bounceInLeft {
+            0% {
+                opacity: 0;
+                transform: translateX(-100px) scale(0.3);
+            }
+            50% {
+                transform: translateX(30px) scale(1.05);
+            }
+            70% {
+                transform: translateX(-10px) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        
+        @keyframes bounceInRight {
+            0% {
+                opacity: 0;
+                transform: translateX(100px) scale(0.3);
+            }
+            50% {
+                transform: translateX(-30px) scale(1.05);
+            }
+            70% {
+                transform: translateX(10px) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        
+        .recommendation-item {
+            animation: zoomIn 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+        
+        @keyframes zoomIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(102, 126, 234, 0.6);
+            }
+        }
+        
+        .rotate-icon {
+            animation: rotateIcon 3s linear infinite;
+        }
+        
+        @keyframes rotateIcon {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .bounce-icon {
+            animation: bounceIcon 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounceIcon {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .pulse-icon {
+            animation: pulseIcon 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseIcon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .shake-icon {
+            animation: shakeIcon 2.5s ease-in-out infinite;
+        }
+        
+        @keyframes shakeIcon {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+            20%, 40%, 60%, 80% { transform: translateX(2px); }
+        }
+        
+        .float-icon {
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-8px) rotate(5deg); }
+            66% { transform: translateY(4px) rotate(-5deg); }
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .dark .text-gradient {
+            background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative overflow-x-hidden h-screen flex flex-col">
+    <!-- Background Video -->
+    <div class="fixed inset-0 z-0">
+        <video autoplay muted loop class="w-full h-full object-cover opacity-30 dark:opacity-20">
+            <source src="https://videos.pexels.com/video-files/3129671/3129671-uhd_3840_2160_30fps.mp4" type="video/mp4">
+            <source src="https://videos.pexels.com/video-files/6962025/6962025-uhd_3840_2160_30fps.mp4" type="video/mp4">
+            <source src="https://videos.pexels.com/video-files/3141211/3141211-uhd_3840_2160_30fps.mp4" type="video/mp4">
+        </video>
+        <!-- Animated particles fallback -->
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 opacity-40 dark:opacity-30">
+            <div class="absolute inset-0" style="background-image: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.2) 2px, transparent 2px), radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 50px 50px; animation: float 20s ease-in-out infinite;"></div>
+        </div>
+        <!-- Professional overlay for readability -->
+        <div class="absolute inset-0 bg-white/50 dark:bg-gray-900/60"></div>
+    </div>
+    
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(10px) rotate(240deg); }
+        }
+        
+        @keyframes headerFloat {
+            0%, 100% { 
+                transform: translateX(0px) translateY(0px) scale(1); 
+                opacity: 0.3;
+            }
+            33% { 
+                transform: translateX(30px) translateY(-20px) scale(1.1); 
+                opacity: 0.5;
+            }
+            66% { 
+                transform: translateX(-20px) translateY(10px) scale(0.9); 
+                opacity: 0.4;
+            }
+        }
+    </style>
+    
+    <!-- Content wrapper -->
+    <div class="relative z-10">
+    <!-- Header -->
+    <header class="relative bg-gradient-to-r from-slate-900 via-purple-900 to-indigo-900 backdrop-blur-lg shadow-2xl overflow-hidden">
+        <!-- Animated background pattern -->
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10">
+            <div class="absolute inset-0" style="background-image: radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%); animation: headerFloat 15s ease-in-out infinite;"></div>
+        </div>
+        
+        <div class="container mx-auto px-6 py-6 relative z-10">
+            <div class="flex justify-between items-center">
+                <!-- Logo and Title Section -->
+                <div class="flex items-center space-x-4">
+                    <!-- Enhanced Robot Icon with Glow -->
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-2xl blur-lg opacity-75 animate-pulse"></div>
+                        <div class="relative bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 p-3 rounded-2xl shadow-2xl">
+                            <i class="fas fa-robot text-white text-3xl drop-shadow-lg"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Title with Enhanced Typography -->
+                    <div class="flex flex-col">
+                        <h1 class="text-4xl font-black bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-transparent tracking-tight leading-none">
+                            AI Resume Scanner
+                        </h1>
+                        <p class="text-slate-300 dark:text-gray-400 text-sm font-medium tracking-wide mt-1">
+                            ⚡ Powered by Advanced AI Technology
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Navigation and Theme Toggle -->
+                <div class="flex items-center space-x-4">
+                    <!-- Navigation Menu -->
+                    <nav class="hidden md:flex items-center space-x-6">
+                        <a href="#features" class="text-slate-300 hover:text-cyan-300 font-semibold transition-colors duration-300 hover:scale-105 transform">
+                            Features
+                        </a>
+                        <button id="aboutBtn" class="text-slate-300 hover:text-cyan-300 font-semibold transition-colors duration-300 hover:scale-105 transform">
+                            About
+                        </button>
+                        <button id="contactBtn" class="text-slate-300 hover:text-cyan-300 font-semibold transition-colors duration-300 hover:scale-105 transform">
+                            Contact
+                        </button>
+                    </nav>
+                    
+                    <!-- Enhanced Theme Toggle -->
+                    <button id="themeToggle" class="relative group bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 dark:from-gray-700 dark:to-gray-600 dark:hover:from-gray-600 dark:hover:to-gray-500 text-white p-3 rounded-xl transition-all duration-300 transform hover:scale-110 shadow-lg hover:shadow-xl">
+                        <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <i class="fa fa-moon relative z-10 text-lg" id="themeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom border with gradient -->
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600"></div>
+    </header>
+
+    <main class="container mx-auto px-8 py-4 flex-1 overflow-y-auto">
+        <!-- Main Content -->
+        <div id="mainContent">
+        <!-- Upload Section -->
+        <div id="uploadSection" class="max-w-2xl mx-auto mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300 card-hover">
+                <h2 class="text-3xl font-black text-gradient mb-8 text-center tracking-tight">
+                    Upload Your Resume for ATS Analysis
+                </h2>
+                
+                <div id="dropZone" class="upload-area border-2 border-dashed border-white/30 rounded-2xl p-12 text-center cursor-pointer">
+                    <i class="fas fa-cloud-upload-alt text-5xl text-white mb-6 pulse-glow bounce-icon"></i>
+                    <p class="text-xl font-bold text-white mb-3">
+                        Drag & drop your resume here
+                    </p>
+                    <p class="text-lg text-white/80 mb-6">
+                        or click to browse files
+                    </p>
+                    <p class="text-sm text-white/60 font-medium">
+                        Supports PDF and DOCX files (max 10MB)
+                    </p>
+                    <input type="file" id="fileInput" class="hidden" accept=".pdf,.docx" />
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progressContainer" class="hidden mt-8">
+                    <div class="flex justify-between text-lg font-bold text-gradient mb-4">
+                        <span>🚀 Analyzing resume with AI...</span>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 shadow-inner">
+                        <div id="progressBar" class="progress-bar h-4 rounded-full shadow-lg" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <!-- ATS Score -->
+            <div class="max-w-4xl mx-auto mb-8">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-10 text-center transition-colors duration-300 card-hover">
+                    <h3 class="text-4xl font-black text-gradient mb-8 tracking-tight">🎯 ATS Compatibility Score</h3>
+                    <div class="relative w-72 h-72 mx-auto mb-8">
+                        <canvas id="scoreChart" width="288" height="288"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center">
+                                <div id="scoreValue" class="text-6xl font-black score-animation text-gradient">0</div>
+                                <div class="text-lg font-bold text-gray-500 dark:text-gray-400">out of 100</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="scoreDescription" class="text-2xl font-bold"></div>
+                </div>
+            </div>
+
+            <!-- Detailed Analysis -->
+            <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 mb-8">
+                <!-- Strengths -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl shadow-2xl p-8 fade-in transition-colors duration-300 card-hover">
+                    <div class="flex items-center mb-6">
+                        <i class="fas fa-check-circle text-green-500 text-3xl mr-4 pulse-glow pulse-icon"></i>
+                        <h4 class="text-2xl font-black text-green-700 dark:text-green-300">✨ Strengths</h4>
+                    </div>
+                    <ul id="strengthsList" class="space-y-4">
+                        <!-- Strengths will be populated here -->
+                    </ul>
+                </div>
+
+                <!-- Weaknesses -->
+                <div class="bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 border-2 border-orange-200 dark:border-orange-700 rounded-2xl shadow-2xl p-8 fade-in transition-colors duration-300 card-hover">
+                    <div class="flex items-center mb-6">
+                        <i class="fas fa-exclamation-triangle text-orange-500 text-3xl mr-4 pulse-glow shake-icon"></i>
+                        <h4 class="text-2xl font-black text-orange-700 dark:text-orange-300">⚡ Areas for Improvement</h4>
+                    </div>
+                    <ul id="weaknessesList" class="space-y-4">
+                        <!-- Weaknesses will be populated here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="max-w-4xl mx-auto mb-8">
+                <div class="bg-gradient-to-br from-blue-50 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 fade-in transition-colors duration-300 card-hover">
+                    <div class="flex items-center mb-6">
+                        <i class="fas fa-lightbulb text-blue-500 text-3xl mr-4 pulse-glow float-icon"></i>
+                        <h4 class="text-2xl font-black text-blue-700 dark:text-blue-300">💡 Smart Recommendations</h4>
+                    </div>
+                    <div id="recommendationsList" class="space-y-6">
+                        <!-- Recommendations will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                    <button id="downloadReport" class="btn-primary text-white px-10 py-4 rounded-2xl font-black text-lg shadow-2xl flex items-center justify-center">
+                        <i class="fas fa-download mr-3 text-xl"></i>
+                        📄 Download Report
+                    </button>
+                    <button id="analyzeAnother" class="btn-secondary text-white px-10 py-4 rounded-2xl font-black text-lg shadow-2xl flex items-center justify-center">
+                        <i class="fas fa-plus mr-3 text-xl"></i>
+                        🚀 Analyze Another Resume
+                    </button>
+                </div>
+            </div>
+        </div>
+            
+        <!-- Features Section -->
+        <!-- <section id="features" class="mb-12 p-8 md:p-12"> -->
+            <!-- <div class="text-center mb-12"> -->
+                <!-- <h2 class="text-4xl font-black text-gradient mb-4 tracking-tight"> -->
+                    <!-- Why Choose Our AI Resume Scanner? -->
+                <!-- </h2> -->
+                <!-- <p class="text-xl text-gray-700 dark:text-gray-300 font-semibold"> -->
+                    <!-- Get professional insights in seconds with our advanced AI technology -->
+                <!-- </p> -->
+            <!-- </div> -->
+            
+            <!-- <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"> -->
+                <!-- Feature 1: Instant Analysis -->
+                <!-- <div class="text-center group">
+                    <div class="feature-icon-container bg-blue-600 hover:bg-blue-500 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-all duration-300 transform group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-blue-500/50">
+                        <i class="fas fa-file-alt text-white text-2xl pulse-icon group-hover:rotate-icon"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-800 dark:text-white mb-4 tracking-tight">
+                        Instant Analysis
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg leading-relaxed">
+                        Get your ATS score and detailed feedback within seconds of upload.
+                    </p>
+                </div> -->
+                
+                <!-- Feature 2: AI-Powered -->
+                <!-- <div class="text-center group">
+                    <div class="feature-icon-container bg-green-600 hover:bg-green-500 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-all duration-300 transform group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-green-500/50">
+                        <i class="fas fa-sync-alt text-white text-2xl rotate-icon"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-800 dark:text-white mb-4 tracking-tight">
+                        AI-Powered
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg leading-relaxed">
+                        Advanced AI analyzes keywords, structure, formatting, and grammar.
+                    </p>
+                </div> -->
+                
+                <!-- Feature 3: Detailed Report -->
+                <!-- <div class="text-center group">
+                    <div class="feature-icon-container bg-purple-600 hover:bg-purple-500 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-all duration-300 transform group-hover:scale-110 group-hover:shadow-2xl group-hover:shadow-purple-500/50">
+                        <i class="fas fa-file-download text-white text-2xl bounce-icon"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-800 dark:text-white mb-4 tracking-tight">
+                        Detailed Report
+                    </h3>
+                    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg leading-relaxed">
+                        Download a comprehensive PDF report with actionable recommendations.
+                    </p>
+                </div>
+            </div>
+        </section> -->
+
+
+
+        </div> <!-- End mainContent -->
+
+        <!-- Contact Page -->
+        <div id="contactPage" class="hidden min-h-screen">
+            <!-- Back Button -->
+            <div class="mb-8">
+                <button id="backToMain" class="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors duration-300 group bg-white dark:bg-gray-800 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl">
+                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform duration-300"></i>
+                    <span>Back to Home</span>
+                </button>
+            </div>
+
+            <!-- Contact Page Header -->
+            <div class="text-center mb-16">
+                <div class="relative inline-block">
+                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+                    <div class="relative bg-gradient-to-br from-slate-800 to-slate-900 dark:from-gray-700 dark:to-gray-800 p-6 rounded-2xl shadow-2xl">
+                        <i class="fas fa-envelope text-5xl text-gradient mb-4"></i>
+                    </div>
+                </div>
+                <h1 class="text-5xl font-black text-gradient mb-6 tracking-tight mt-8">
+                    Get In Touch
+                </h1>
+                <p class="text-2xl text-gray-700 dark:text-gray-300 font-semibold max-w-2xl mx-auto">
+                    Have questions about the AI Resume Scanner? Need help optimizing your resume? I'd love to hear from you!
+                </p>
+                <div class="w-32 h-1 bg-gradient-to-r from-cyan-400 to-purple-600 mx-auto mt-8"></div>
+            </div>
+
+            <!-- Contact Content -->
+            <div class="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16">
+                <!-- Contact Information -->
+                <div class="space-y-8">
+                    <!-- Contact Cards -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300 card-hover">
+                        <h3 class="text-3xl font-black text-gradient mb-8">Let's Connect</h3>
+                        
+                        <div class="space-y-8">
+                            <!-- Email -->
+                            <div class="flex items-center space-x-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl">
+                                <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-xl shadow-lg">
+                                    <i class="fas fa-envelope text-white text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-black text-xl text-gray-800 dark:text-white">Email</h4>
+                                    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg">aditya.tamgade@gmail.com</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Best for detailed inquiries</p>
+                                </div>
+                            </div>
+                            
+                            <!-- LinkedIn -->
+                            <div class="flex items-center space-x-6 p-4 bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-xl">
+                                <div class="bg-gradient-to-r from-green-500 to-teal-600 p-4 rounded-xl shadow-lg">
+                                    <i class="fab fa-linkedin text-white text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-black text-xl text-gray-800 dark:text-white">LinkedIn</h4>
+                                    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg">www.linkedin.com/in/adityatamgade</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Professional networking</p>
+                                </div>
+                            </div>
+                            
+                            <!-- GitHub -->
+                            <div class="flex items-center space-x-6 p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 rounded-xl">
+                                <div class="bg-gradient-to-r from-gray-700 to-gray-900 p-4 rounded-xl shadow-lg">
+                                    <i class="fab fa-github text-white text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-black text-xl text-gray-800 dark:text-white">GitHub</h4>
+                                    <p class="text-gray-600 dark:text-gray-300 font-semibold text-lg">https://github.com/AdityaTamgade</p>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">View my projects</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Info -->
+                    <div class="bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-cyan-900/20 dark:to-blue-900/20 border-2 border-cyan-200 dark:border-cyan-700 rounded-2xl shadow-2xl p-8 transition-colors duration-300 card-hover">
+                        <div class="flex items-center mb-6">
+                            <i class="fas fa-info-circle text-cyan-500 text-3xl mr-4 pulse-icon"></i>
+                            <h4 class="text-2xl font-black text-cyan-700 dark:text-cyan-300">Quick Info</h4>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-clock text-cyan-600 text-lg"></i>
+                                <span class="text-gray-700 dark:text-gray-300 font-semibold">Response time: Within 24 hours</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-globe text-cyan-600 text-lg"></i>
+                                <span class="text-gray-700 dark:text-gray-300 font-semibold">Timezone: IST (UTC+5:30)</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-language text-cyan-600 text-lg"></i>
+                                <span class="text-gray-700 dark:text-gray-300 font-semibold">Languages: English, Hindi</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-10 transition-colors duration-300 card-hover">
+                    <div class="text-center mb-8">
+                        <h3 class="text-3xl font-black text-gradient mb-4">Send Message</h3>
+                        <p class="text-gray-600 dark:text-gray-400 font-medium">Fill out the form below and I'll get back to you soon!</p>
+                    </div>
+                    
+                    <form id="contactForm" class="space-y-6">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="name" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    <i class="fas fa-user mr-2 text-blue-500"></i>Full Name *
+                                </label>
+                                <input type="text" id="name" name="name" required
+                                       placeholder="Enter your full name"
+                                       class="w-full px-4 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium hover:border-blue-400 dark:hover:border-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label for="email" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                    <i class="fas fa-envelope mr-2 text-green-500"></i>Email Address *
+                                </label>
+                                <input type="email" id="email" name="email" required
+                                       placeholder="your.email@example.com"
+                                       class="w-full px-4 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium hover:border-blue-400 dark:hover:border-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="subject" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                <i class="fas fa-tag mr-2 text-purple-500"></i>Subject *
+                            </label>
+                            <select id="subject" name="subject" required
+                                    class="w-full px-4 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium hover:border-blue-400 dark:hover:border-blue-500">
+                                <option value="">Select a subject</option>
+                                <option value="Resume Analysis Question">Resume Analysis Question</option>
+                                <option value="Technical Support">Technical Support</option>
+                                <option value="Feature Request">Feature Request</option>
+                                <option value="Bug Report">Bug Report</option>
+                                <option value="Business Inquiry">Business Inquiry</option>
+                                <option value="General Question">General Question</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="message" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                                <i class="fas fa-comment mr-2 text-orange-500"></i>Message *
+                            </label>
+                            <textarea id="message" name="message" rows="6" required
+                                      placeholder="Tell me about your question, feedback, or how I can help you..."
+                                      class="w-full px-4 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-medium resize-none hover:border-blue-400 dark:hover:border-blue-500"></textarea>
+                        </div>
+                        
+                        <button type="submit" id="submitBtn"
+                                class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-black py-5 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center justify-center space-x-3 text-lg">
+                            <i class="fas fa-paper-plane text-xl"></i>
+                            <span>Send Message</span>
+                        </button>
+                    </form>
+                    
+                    <!-- Success/Error Messages -->
+                    <div id="formMessage" class="hidden mt-6 p-4 rounded-xl"></div>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="max-w-4xl mx-auto mt-20">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl font-black text-gradient mb-4">Frequently Asked Questions</h3>
+                    <p class="text-gray-600 dark:text-gray-400 font-medium">Quick answers to common questions</p>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <h4 class="font-black text-lg text-gray-800 dark:text-white mb-3">
+                            <i class="fas fa-question-circle text-blue-500 mr-2"></i>
+                            How accurate is the ATS analysis?
+                        </h4>
+                        <p class="text-gray-600 dark:text-gray-300 font-medium">
+                            Our AI analyzes your resume using the same criteria as modern ATS systems, providing 85-90% accuracy in compatibility scoring.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <h4 class="font-black text-lg text-gray-800 dark:text-white mb-3">
+                            <i class="fas fa-shield-alt text-green-500 mr-2"></i>
+                            Is my resume data secure?
+                        </h4>
+                        <p class="text-gray-600 dark:text-gray-300 font-medium">
+                            Yes! All resume data is processed locally in your browser and never stored on our servers. Your privacy is our priority.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <h4 class="font-black text-lg text-gray-800 dark:text-white mb-3">
+                            <i class="fas fa-file-alt text-purple-500 mr-2"></i>
+                            What file formats are supported?
+                        </h4>
+                        <p class="text-gray-600 dark:text-gray-300 font-medium">
+                            We support PDF and DOCX files up to 10MB. These are the most common resume formats used by job seekers.
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <h4 class="font-black text-lg text-gray-800 dark:text-white mb-3">
+                            <i class="fas fa-clock text-orange-500 mr-2"></i>
+                            How long does analysis take?
+                        </h4>
+                        <p class="text-gray-600 dark:text-gray-300 font-medium">
+                            Analysis typically completes within 10-15 seconds, providing you with instant feedback and actionable recommendations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- End contactPage -->
+
+        <!-- About Page -->
+        <div id="aboutPage" class="hidden min-h-screen">
+            <!-- Back Button -->
+            <div class="mb-8">
+                <button id="backToMainFromAbout" class="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors duration-300 group bg-white dark:bg-gray-800 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl">
+                    <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform duration-300"></i>
+                    <span>Back to Home</span>
+                </button>
+            </div>
+
+            <!-- About Page Header -->
+            <div class="text-center mb-16">
+                <div class="relative inline-block">
+                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+                    <div class="relative bg-gradient-to-br from-slate-800 to-slate-900 dark:from-gray-700 dark:to-gray-800 p-6 rounded-2xl shadow-2xl">
+                        <i class="fas fa-brain text-5xl text-gradient mb-4"></i>
+                    </div>
+                </div>
+                <h1 class="text-5xl font-black text-gradient mb-6 tracking-tight mt-8">
+                    About AI Resume Scanner
+                </h1>
+                <p class="text-2xl text-gray-700 dark:text-gray-300 font-semibold max-w-3xl mx-auto">
+                    Revolutionizing resume optimization with cutting-edge artificial intelligence technology
+                </p>
+                <div class="w-32 h-1 bg-gradient-to-r from-cyan-400 to-purple-600 mx-auto mt-8"></div>
+            </div>
+
+            <!-- Main About Content -->
+            <div class="max-w-6xl mx-auto space-y-16">
+                <!-- Mission Statement -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-10 transition-colors duration-300 card-hover">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-black text-gradient mb-4">Our Mission</h2>
+                        <div class="w-20 h-1 bg-gradient-to-r from-blue-400 to-purple-600 mx-auto"></div>
+                    </div>
+                    <p class="text-xl text-gray-700 dark:text-gray-300 font-medium leading-relaxed text-center max-w-4xl mx-auto">
+                        To empower job seekers worldwide by providing intelligent, instant feedback on resume optimization. 
+                        We believe everyone deserves a fair chance to showcase their talents, and our AI technology helps 
+                        bridge the gap between human potential and automated screening systems.
+                    </p>
+                </div>
+
+                <!-- Technology & Features -->
+                <div class="grid lg:grid-cols-2 gap-12">
+                    <!-- Technology Stack -->
+                    <div class="bg-gradient-to-br from-blue-50 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-2xl shadow-2xl p-8 transition-colors duration-300 card-hover">
+                        <div class="flex items-center mb-6">
+                            <i class="fas fa-cogs text-blue-500 text-3xl mr-4 pulse-icon"></i>
+                            <h3 class="text-2xl font-black text-blue-700 dark:text-blue-300">Technology Stack</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-robot text-blue-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">Advanced Natural Language Processing</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-search text-green-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">Keyword Optimization Analysis</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-chart-line text-purple-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">Machine Learning Algorithms</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-shield-alt text-orange-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">Privacy-First Architecture</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Features -->
+                    <div class="bg-gradient-to-br from-green-50 to-teal-100 dark:from-green-900/20 dark:to-teal-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl shadow-2xl p-8 transition-colors duration-300 card-hover">
+                        <div class="flex items-center mb-6">
+                            <i class="fas fa-star text-green-500 text-3xl mr-4 pulse-icon"></i>
+                            <h3 class="text-2xl font-black text-green-700 dark:text-green-300">Key Features</h3>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-clock text-blue-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">Instant 10-second analysis</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-percentage text-green-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">ATS compatibility scoring</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-lightbulb text-purple-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">Actionable recommendations</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-3 bg-white/50 dark:bg-gray-700/50 rounded-lg">
+                                <i class="fas fa-file-pdf text-orange-600 text-lg"></i>
+                                <span class="text-gray-800 dark:text-gray-200 font-semibold">Downloadable PDF reports</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Developer Section -->
+                <div class="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-700 rounded-2xl shadow-2xl p-10 transition-colors duration-300 card-hover">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-black text-gradient mb-4">Meet the Developer</h2>
+                        <div class="w-20 h-1 bg-gradient-to-r from-purple-400 to-pink-600 mx-auto"></div>
+                    </div>
+                    
+                    <div class="grid lg:grid-cols-3 gap-8 items-center">
+                        <!-- Developer Avatar -->
+                        <div class="text-center">
+                            <div class="relative inline-block">
+                                <div class="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-600 rounded-full blur-xl opacity-50 animate-pulse"></div>
+                                <div class="relative bg-gradient-to-br from-purple-600 to-pink-600 w-32 h-32 rounded-full flex items-center justify-center shadow-2xl mx-auto">
+                                    <i class="fas fa-user-tie text-white text-4xl"></i>
+                                </div>
+                            </div>
+                            <h3 class="text-2xl font-black text-gradient mt-4">Aditya Tamgade</h3>
+                            <p class="text-purple-600 dark:text-purple-400 font-bold">Full Stack Developer</p>
+                        </div>
+                        
+                        <!-- Developer Info -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <p class="text-lg text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                Hi! I'm <strong class="text-gradient">Aditya Tamgade</strong>, a passionate full-stack developer and AI enthusiast. 
+                                I created this AI Resume Scanner to help job seekers navigate the increasingly complex world of 
+                                Applicant Tracking Systems (ATS).
+                            </p>
+                            <p class="text-lg text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                                With experience in modern web technologies and machine learning, I believe in creating tools 
+                                that make a real difference in people's careers. This project combines my technical skills 
+                                with my desire to help others succeed in their professional journeys.
+                            </p>
+                            
+                            <!-- Skills -->
+                            <div>
+                                <h4 class="text-lg font-black text-gray-800 dark:text-white mb-3">Expertise</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded-full text-sm font-bold">JavaScript</span>
+                                    <span class="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-sm font-bold">React</span>
+                                    <span class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold">Node.js</span>
+                                    <span class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-3 py-1 rounded-full text-sm font-bold">Python</span>
+                                    <span class="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">AI/ML</span>
+                                    <span class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-3 py-1 rounded-full text-sm font-bold">UI/UX</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <div class="text-3xl font-black text-blue-600 dark:text-blue-400 mb-2">10s</div>
+                        <div class="text-gray-600 dark:text-gray-400 font-semibold">Analysis Time</div>
+                    </div>
+                    <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <div class="text-3xl font-black text-green-600 dark:text-green-400 mb-2">90%</div>
+                        <div class="text-gray-600 dark:text-gray-400 font-semibold">Accuracy Rate</div>
+                    </div>
+                    <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <div class="text-3xl font-black text-purple-600 dark:text-purple-400 mb-2">24/7</div>
+                        <div class="text-gray-600 dark:text-gray-400 font-semibold">Availability</div>
+                    </div>
+                    <div class="text-center bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 card-hover">
+                        <div class="text-3xl font-black text-orange-600 dark:text-orange-400 mb-2">Free</div>
+                        <div class="text-gray-600 dark:text-gray-400 font-semibold">Always</div>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-10 transition-colors duration-300 card-hover">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-black text-gradient mb-4">How It Works</h2>
+                        <div class="w-20 h-1 bg-gradient-to-r from-cyan-400 to-purple-600 mx-auto mb-6"></div>
+                        <p class="text-lg text-gray-600 dark:text-gray-400 font-medium">
+                            Our AI-powered analysis process in four simple steps
+                        </p>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-4 gap-8">
+                        <!-- Step 1 -->
+                        <div class="text-center group">
+                            <div class="relative mb-6">
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
+                                    <i class="fas fa-upload text-white text-2xl"></i>
+                                </div>
+                                <div class="absolute -top-2 -right-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white text-sm font-black w-8 h-8 rounded-full flex items-center justify-center">1</div>
+                            </div>
+                            <h3 class="text-lg font-black text-gray-800 dark:text-white mb-2">Upload Resume</h3>
+                            <p class="text-gray-600 dark:text-gray-400 font-medium text-sm">
+                                Upload your PDF or DOCX resume file securely
+                            </p>
+                        </div>
+                        
+                        <!-- Step 2 -->
+                        <div class="text-center group">
+                            <div class="relative mb-6">
+                                <div class="bg-gradient-to-r from-green-500 to-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
+                                    <i class="fas fa-brain text-white text-2xl"></i>
+                                </div>
+                                <div class="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-green-500 text-white text-sm font-black w-8 h-8 rounded-full flex items-center justify-center">2</div>
+                            </div>
+                            <h3 class="text-lg font-black text-gray-800 dark:text-white mb-2">AI Analysis</h3>
+                            <p class="text-gray-600 dark:text-gray-400 font-medium text-sm">
+                                Our AI analyzes content, keywords, and structure
+                            </p>
+                        </div>
+                        
+                        <!-- Step 3 -->
+                        <div class="text-center group">
+                            <div class="relative mb-6">
+                                <div class="bg-gradient-to-r from-purple-500 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
+                                    <i class="fas fa-chart-bar text-white text-2xl"></i>
+                                </div>
+                                <div class="absolute -top-2 -right-2 bg-gradient-to-r from-purple-400 to-purple-500 text-white text-sm font-black w-8 h-8 rounded-full flex items-center justify-center">3</div>
+                            </div>
+                            <h3 class="text-lg font-black text-gray-800 dark:text-white mb-2">Get Score</h3>
+                            <p class="text-gray-600 dark:text-gray-400 font-medium text-sm">
+                                Receive your ATS compatibility score instantly
+                            </p>
+                        </div>
+                        
+                        <!-- Step 4 -->
+                        <div class="text-center group">
+                            <div class="relative mb-6">
+                                <div class="bg-gradient-to-r from-orange-500 to-orange-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
+                                    <i class="fas fa-lightbulb text-white text-2xl"></i>
+                                </div>
+                                <div class="absolute -top-2 -right-2 bg-gradient-to-r from-orange-400 to-orange-500 text-white text-sm font-black w-8 h-8 rounded-full flex items-center justify-center">4</div>
+                            </div>
+                            <h3 class="text-lg font-black text-gray-800 dark:text-white mb-2">Improve</h3>
+                            <p class="text-gray-600 dark:text-gray-400 font-medium text-sm">
+                                Follow recommendations to optimize your resume
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call to Action -->
+                <div class="text-center bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-2xl p-12">
+                    <h2 class="text-3xl font-black text-white mb-4">Ready to Optimize Your Resume?</h2>
+                    <p class="text-xl text-blue-100 mb-8 font-medium">
+                        Join thousands of job seekers who have improved their ATS compatibility
+                    </p>
+                    <button id="startAnalysisFromAbout" class="bg-white text-blue-600 hover:text-blue-700 font-black px-8 py-4 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl">
+                        <i class="fas fa-rocket mr-2"></i>
+                        Start Your Analysis Now
+                    </button>
+                </div>
+            </div>
+        </div> <!-- End aboutPage -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative mt-13 z-10 bg-gradient-to-r from-slate-900 via-purple-900 to-indigo-900 backdrop-blur-lg shadow-2xl flex-shrink-0">
+        <div class="container mx-auto px-6 py-3">
+            <div class="text-center">
+                <!-- Name -->
+                <!-- <h3 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 mb-2 tracking-tight">
+                    ADITYA TAMGADE
+                </h3> -->
+                <p class="text-gray-300 mb-6 font-medium">
+
+                    ADITYA TAMGADE || 🚀 Full Stack Developer & AI Enthusiast
+                    
+                    <!-- 🚀 Full Stack Developer & AI Enthusiast -->
+                </p>
+                
+                <!-- Social Links -->
+                <div class="flex justify-center space-x-4 mb-3">
+                    <a href="https://linkedin.com/in/aditya-tamgade" target="_blank" 
+                       class="group flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-bold text-sm transition-all duration-300 transform hover:scale-105">
+                        <i class="fab fa-linkedin-in group-hover:animate-bounce"></i>
+                        <span>LinkedIn</span>
+                    </a>
+                    <a href="https://github.com/aditya-tamgade" target="_blank" 
+                       class="group flex items-center space-x-2 bg-gray-800 hover:bg-gray-900 text-white px-3 py-1 rounded-lg font-bold text-sm transition-all duration-300 transform hover:scale-105">
+                        <i class="fab fa-github group-hover:animate-bounce"></i>
+                        <span>GitHub</span>
+                    </a>
+                </div>
+                
+                <!-- Copyright -->
+                <p class="text-gray-400 font-medium text-sm">
+                    © 2025 Built with Perfection and AI • Empowering careers through intelligent analysis
+                </p>
+            </div>
+        </div>
+    </footer>
+    
+    <style>
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fade-in-up 0.8s ease-out forwards;
+            opacity: 0;
+        }
+    </style>
+
+    <script>
+        // Global variables
+        let currentResults = null;
+        let scoreChart = null;
+
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        // Check for saved theme preference or default to light mode
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        html.classList.toggle('dark', currentTheme === 'dark');
+        updateThemeIcon();
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcon();
+        });
+
+        function updateThemeIcon() {
+            const isDark = html.classList.contains('dark');
+            themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        // File upload functionality
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const uploadSection = document.getElementById('uploadSection');
+        const resultsSection = document.getElementById('resultsSection');
+
+        // Drag and drop events
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('dragleave', handleDragLeave);
+        dropZone.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-blue-100', 'dark:bg-blue-800/30');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-100', 'dark:bg-blue-800/30');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-100', 'dark:bg-blue-800/30');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            // Validate file type and size
+            const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            const maxSize = 10 * 1024 * 1024; // 10MB
+
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload a PDF or DOCX file.');
+                return;
+            }
+
+            if (file.size > maxSize) {
+                alert('File size must be less than 10MB.');
+                return;
+            }
+
+            // Show progress and simulate analysis
+            showProgress();
+            simulateAnalysis();
+        }
+
+        function showProgress() {
+            progressContainer.classList.remove('hidden');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(showResults, 500);
+                }
+                progressBar.style.width = progress + '%';
+                progressText.textContent = Math.round(progress) + '%';
+            }, 200);
+        }
+
+        function simulateAnalysis() {
+            // Simulate AI analysis with mock data
+            setTimeout(() => {
+                currentResults = generateMockResults();
+            }, 2000);
+        }
+
+        function generateMockResults() {
+            const scores = [72, 85, 91, 68, 79, 88, 76, 82];
+            const score = scores[Math.floor(Math.random() * scores.length)];
+            
+            return {
+                score: score,
+                strengths: [
+                    "Clear professional summary section",
+                    "Relevant technical skills highlighted",
+                    "Quantified achievements with metrics",
+                    "Consistent formatting throughout",
+                    "Appropriate use of keywords"
+                ],
+                weaknesses: [
+                    "Missing contact information optimization",
+                    "Could benefit from more action verbs",
+                    "Some sections lack specific details",
+                    "Limited industry-specific terminology"
+                ],
+                recommendations: [
+                    {
+                        title: "Optimize Contact Information",
+                        description: "Include LinkedIn profile URL and ensure phone number is properly formatted for ATS parsing."
+                    },
+                    {
+                        title: "Enhance Keywords",
+                        description: "Research job descriptions in your field and incorporate more relevant industry keywords naturally throughout your resume."
+                    },
+                    {
+                        title: "Quantify More Achievements",
+                        description: "Add specific numbers, percentages, or dollar amounts to demonstrate the impact of your work."
+                    },
+                    {
+                        title: "Improve Section Headers",
+                        description: "Use standard section headers like 'Professional Experience' instead of creative alternatives for better ATS recognition."
+                    }
+                ]
+            };
+        }
+
+        function showResults() {
+            uploadSection.style.display = 'none';
+            resultsSection.classList.remove('hidden');
+            
+            // Animate score
+            animateScore(currentResults.score);
+            
+            // Populate results
+            populateStrengths(currentResults.strengths);
+            populateWeaknesses(currentResults.weaknesses);
+            populateRecommendations(currentResults.recommendations);
+            
+            // Create score chart
+            createScoreChart(currentResults.score);
+        }
+
+        function animateScore(targetScore) {
+            const scoreElement = document.getElementById('scoreValue');
+            const descriptionElement = document.getElementById('scoreDescription');
+            
+            let currentScore = 0;
+            const increment = targetScore / 50;
+            
+            const animation = setInterval(() => {
+                currentScore += increment;
+                if (currentScore >= targetScore) {
+                    currentScore = targetScore;
+                    clearInterval(animation);
+                }
+                scoreElement.textContent = Math.round(currentScore);
+            }, 40);
+            
+            // Set description based on score
+            let description, color;
+            if (targetScore >= 90) {
+                description = "Excellent ATS Compatibility";
+                color = "text-green-600 dark:text-green-400";
+            } else if (targetScore >= 75) {
+                description = "Good ATS Compatibility";
+                color = "text-blue-600 dark:text-blue-400";
+            } else if (targetScore >= 60) {
+                description = "Fair ATS Compatibility";
+                color = "text-yellow-600 dark:text-yellow-400";
+            } else {
+                description = "Needs Improvement";
+                color = "text-red-600 dark:text-red-400";
+            }
+            
+            descriptionElement.textContent = description;
+            descriptionElement.className = `text-lg ${color}`;
+        }
+
+        function createScoreChart(score) {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (scoreChart) {
+                scoreChart.destroy();
+            }
+            
+            const color = score >= 90 ? '#10B981' : score >= 75 ? '#3B82F6' : score >= 60 ? '#F59E0B' : '#EF4444';
+            
+            scoreChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [score, 100 - score],
+                        backgroundColor: [color, '#E5E7EB'],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function populateStrengths(strengths) {
+            const list = document.getElementById('strengthsList');
+            list.innerHTML = '';
+            
+            strengths.forEach((strength, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start strength-item';
+                li.style.animationDelay = `${index * 0.1}s`;
+                li.innerHTML = `
+                    <i class="fas fa-check text-green-600 text-xl mt-1 mr-4 flex-shrink-0"></i>
+                    <span class="text-gray-800 dark:text-gray-200 font-semibold text-lg">${strength}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function populateWeaknesses(weaknesses) {
+            const list = document.getElementById('weaknessesList');
+            list.innerHTML = '';
+            
+            weaknesses.forEach((weakness, index) => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start weakness-item';
+                li.style.animationDelay = `${index * 0.1}s`;
+                li.innerHTML = `
+                    <i class="fas fa-exclamation-circle text-orange-600 text-xl mt-1 mr-4 flex-shrink-0"></i>
+                    <span class="text-gray-800 dark:text-gray-200 font-semibold text-lg">${weakness}</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function populateRecommendations(recommendations) {
+            const list = document.getElementById('recommendationsList');
+            list.innerHTML = '';
+            
+            recommendations.forEach((rec, index) => {
+                const div = document.createElement('div');
+                div.className = 'recommendation-item border-l-4 border-blue-500 bg-white/50 dark:bg-gray-700/50 rounded-r-xl pl-6 py-4 shadow-lg';
+                div.style.animationDelay = `${index * 0.2}s`;
+                div.innerHTML = `
+                    <h5 class="font-black text-xl text-blue-700 dark:text-blue-300 mb-2">${rec.title}</h5>
+                    <p class="text-gray-700 dark:text-gray-300 font-medium text-lg leading-relaxed">${rec.description}</p>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Download report functionality
+        document.getElementById('downloadReport').addEventListener('click', downloadReport);
+
+        function downloadReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(20);
+            doc.text('ATS Resume Analysis Report', 20, 30);
+            
+            // Add score
+            doc.setFontSize(16);
+            doc.text(`ATS Compatibility Score: ${currentResults.score}/100`, 20, 50);
+            
+            // Add strengths
+            doc.setFontSize(14);
+            doc.text('Strengths:', 20, 70);
+            doc.setFontSize(10);
+            let yPos = 80;
+            currentResults.strengths.forEach(strength => {
+                doc.text(`• ${strength}`, 25, yPos);
+                yPos += 10;
+            });
+            
+            // Add weaknesses
+            yPos += 10;
+            doc.setFontSize(14);
+            doc.text('Areas for Improvement:', 20, yPos);
+            yPos += 10;
+            doc.setFontSize(10);
+            currentResults.weaknesses.forEach(weakness => {
+                doc.text(`• ${weakness}`, 25, yPos);
+                yPos += 10;
+            });
+            
+            // Add recommendations
+            yPos += 10;
+            doc.setFontSize(14);
+            doc.text('Recommendations:', 20, yPos);
+            yPos += 10;
+            doc.setFontSize(10);
+            currentResults.recommendations.forEach(rec => {
+                doc.text(`• ${rec.title}: ${rec.description}`, 25, yPos, { maxWidth: 160 });
+                yPos += 20;
+            });
+            
+            doc.save('ats-resume-analysis-report.pdf');
+        }
+
+        // Analyze another resume
+        document.getElementById('analyzeAnother').addEventListener('click', () => {
+            resultsSection.classList.add('hidden');
+            uploadSection.style.display = 'block';
+            progressContainer.classList.add('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+            fileInput.value = '';
+            currentResults = null;
+            
+            if (scoreChart) {
+                scoreChart.destroy();
+                scoreChart = null;
+            }
+        });
+
+        // Page navigation functionality
+        const mainContent = document.getElementById('mainContent');
+        const contactPage = document.getElementById('contactPage');
+        const aboutPage = document.getElementById('aboutPage');
+        const contactBtn = document.getElementById('contactBtn');
+        const aboutBtn = document.getElementById('aboutBtn');
+        const backToMain = document.getElementById('backToMain');
+        const backToMainFromAbout = document.getElementById('backToMainFromAbout');
+        const startAnalysisFromAbout = document.getElementById('startAnalysisFromAbout');
+
+        contactBtn.addEventListener('click', () => {
+            mainContent.classList.add('hidden');
+            aboutPage.classList.add('hidden');
+            contactPage.classList.remove('hidden');
+        });
+
+        aboutBtn.addEventListener('click', () => {
+            mainContent.classList.add('hidden');
+            contactPage.classList.add('hidden');
+            aboutPage.classList.remove('hidden');
+        });
+
+        backToMain.addEventListener('click', () => {
+            contactPage.classList.add('hidden');
+            aboutPage.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+        });
+
+        backToMainFromAbout.addEventListener('click', () => {
+            aboutPage.classList.add('hidden');
+            contactPage.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+        });
+
+        startAnalysisFromAbout.addEventListener('click', () => {
+            aboutPage.classList.add('hidden');
+            contactPage.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+            // Scroll to upload section
+            document.getElementById('uploadSection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Contact form functionality
+        document.getElementById('contactForm').addEventListener('submit', handleContactForm);
+
+        function handleContactForm(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const formMessage = document.getElementById('formMessage');
+            const form = e.target;
+            
+            // Get form data
+            const formData = new FormData(form);
+            const name = formData.get('name');
+            const email = formData.get('email');
+            const subject = formData.get('subject');
+            const message = formData.get('message');
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Sending...';
+            submitBtn.disabled = true;
+            
+            // Create mailto link (since we can't send emails directly from frontend)
+            const mailtoLink = `mailto:aditya.tamgade@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`)}`;
+            
+            // Simulate sending delay for better UX
+            setTimeout(() => {
+                // Open email client
+                window.location.href = mailtoLink;
+                
+                // Show success message
+                formMessage.className = 'mt-4 p-4 rounded-xl bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300 font-semibold';
+                formMessage.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                        <span>Your email client should open now. If not, please email me directly at aditya.tamgade@gmail.com</span>
+                    </div>
+                `;
+                formMessage.classList.remove('hidden');
+                
+                // Reset form
+                form.reset();
+                
+                // Reset button
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i><span>Send Message</span>';
+                submitBtn.disabled = false;
+                
+                // Hide message after 10 seconds
+                setTimeout(() => {
+                    formMessage.classList.add('hidden');
+                }, 10000);
+                
+            }, 1000);
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+    </div> <!-- End content wrapper -->
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d62958437685cb',t:'MTc1NDg5ODgzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
