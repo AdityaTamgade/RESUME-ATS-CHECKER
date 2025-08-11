@@ -302,7 +302,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative overflow-x-hidden h-screen flex flex-col">
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300 relative overflow-x-hidden min-h-screen flex flex-col">
     <!-- Background Video -->
     <div class="fixed inset-0 z-0">
         <video autoplay muted loop class="w-full h-full object-cover opacity-30 dark:opacity-20">
@@ -376,10 +376,11 @@
                 <!-- Navigation and Theme Toggle -->
                 <div class="flex items-center space-x-4">
                     <!-- Navigation Menu -->
-                    <nav class="hidden md:flex items-center space-x-6">
+                     
+                    <!-- <nav class="hidden md:flex items-center space-x-6">
                         <a href="#features" class="text-slate-300 hover:text-cyan-300 font-semibold transition-colors duration-300 hover:scale-105 transform">
                             Features
-                        </a>
+                        </a> -->
                         <button id="aboutBtn" class="text-slate-300 hover:text-cyan-300 font-semibold transition-colors duration-300 hover:scale-105 transform">
                             About
                         </button>
@@ -406,7 +407,7 @@
         <div id="mainContent">
         <!-- Upload Section -->
         <div id="uploadSection" class="max-w-2xl mx-auto mb-8">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300 card-hover">
+            <div class="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300 card-hover">
                 <h2 class="text-3xl font-black text-gradient mb-8 text-center tracking-tight">
                     Upload Your Resume for ATS Analysis
                 </h2>
@@ -1032,7 +1033,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="relative mt-13 z-10 bg-gradient-to-r from-slate-900 via-purple-900 to-indigo-900 backdrop-blur-lg shadow-2xl flex-shrink-0">
+    <footer class="relative mt-8 z-10 bg-gradient-to-r from-slate-900 via-purple-900 to-indigo-900 backdrop-blur-lg shadow-2xl flex-shrink-0">
         <div class="container mx-auto px-6 py-3">
             <div class="text-center">
                 <!-- Name -->
